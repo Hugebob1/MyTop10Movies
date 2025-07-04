@@ -5,6 +5,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
+from wtforms.fields.numeric import IntegerField
 from wtforms.validators import DataRequired
 import requests
 
@@ -52,11 +53,37 @@ with app.app_context():
 #     db.session.add(second_movie)
 #     db.session.commit()
 
+class MovieForm(FlaskForm):
+    rating = StringField("Your Rating Out of 10 e.g. 7.5")
+    review = StringField("Your Review")
+    submit = SubmitField("Done")
 
 @app.route("/")
 def home():
     movies = db.session.query(Movie).all()
     return render_template("index.html", movies=movies)
+
+@app.route("/edit", methods=["GET", "POST"])
+def edit():
+    form = MovieForm()
+    movie_id = request.args.get("id")
+    movie = db.get_or_404(Movie, movie_id)
+    if form.validate_on_submit():
+        new_rating = float(form.rating.data)
+        movie.rating = new_rating
+        new_review = form.review.data
+        movie.review = new_review
+        db.session.commit()
+        return redirect(url_for("home"))
+    return render_template("edit.html", form=form)
+
+@app.route("/delete", methods=["GET", "POST"])
+def delete():
+    movie_id = request.args.get("id")
+    movie = db.get_or_404(Movie, movie_id)
+    db.session.delete(movie)
+    db.session.commit()
+    return redirect(url_for("home"))
 
 
 if __name__ == '__main__':
