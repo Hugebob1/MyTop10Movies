@@ -10,6 +10,10 @@ from wtforms.validators import DataRequired
 import requests
 
 
+API_KEY = "aa2ae94247da6d219a6f48e3eb0cab90"
+url = "https://api.themoviedb.org/3/search/movie"
+MOVIE_DB_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///top10Movies-collection.db"
@@ -58,6 +62,10 @@ class MovieForm(FlaskForm):
     review = StringField("Your Review")
     submit = SubmitField("Done")
 
+class AddForm(FlaskForm):
+    title = StringField("Movie title")
+    submit = SubmitField("Add movie")
+
 @app.route("/")
 def home():
     movies = db.session.query(Movie).all()
@@ -86,5 +94,42 @@ def delete():
     return redirect(url_for("home"))
 
 
+@app.route("/add", methods=["GET", "POST"])
+def add():
+    form = AddForm()
+
+    if form.validate_on_submit():
+        movie_title = form.title.data
+        response = requests.get(url, params={"api_key": API_KEY, "query": movie_title})
+        data = response.json()["results"]
+        return render_template("select.html", options=data)
+
+    return render_template("add.html", form=form)
+@app.route("/details", methods=["GET", "POST"])
+def details():
+    movie_api_id = request.args.get("id")
+    if movie_api_id:
+        movie_api_url = f"https://api.themoviedb.org/3/movie/{movie_api_id}"
+        form = MovieForm()
+        response = requests.get(movie_api_url, params={"api_key": API_KEY, "language": "en-US"})
+        data = response.json()
+        new_movie = Movie(
+            title=data["title"],
+
+            year=data["release_date"].split("-")[0],
+            img_url=f"{MOVIE_DB_IMAGE_URL}{data['poster_path']}",
+            description=data["overview"],
+
+            rating = 0.0,
+            ranking = 0,
+            review = ""
+        )
+        db.session.add(new_movie)
+        db.session.commit()
+        return redirect(url_for("edit", id=new_movie.id))
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+#overview, vote_average,
