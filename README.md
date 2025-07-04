@@ -21,8 +21,7 @@ A Flask web app for managing your personal list of top-rated movies — with liv
 ## Screenshots
 
 <img src="screenshots/home.png" width="700">
-<img src="screenshots/add.png" width="700">
-<img src="screenshots/edit.png" width="700">
+
 
 ## How to Run
 
